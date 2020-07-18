@@ -8,6 +8,7 @@ License: GNU GPLv3 http://www.gnu.org/licenses/gpl.html
 from __future__ import print_function
 
 import numpy as np
+import pandas as pd
 import sys
 
 import nsfg
@@ -33,10 +34,34 @@ def main(script):
     """
     print('%s: All tests passed.' % script)
 
+def CrossValidatePregnum(resp, preg):
+    """Print a cross validation output 
+
+    resp: dataframe with nsfg respondents
+    preg: dataframe with nsfg pregnancies
+    """
+
+    cv_preg = preg['caseid'].value_counts().reset_index()
+    cv_preg.columns = ['caseid','count_preg']
+
+    cv_resp = resp[['caseid','pregnum']]
+
+    cv_merge = pd.merge(left=cv_preg, right=cv_resp,
+     how='left', left_on='caseid', right_on='caseid')
+
+    cv_merge['preg_diff'] = cv_merge.count_preg - cv_merge.pregnum
+
+    print(cv_resp.nunique())
+
+    #print(cv_merge.preg_diff.value_counts())
+
 
 if __name__ == '__main__':
     main(*sys.argv)
 
     resp = nsfg.ReadFemResp()
+    preg = nsfg.ReadFemPreg()
 
-    print(resp.pregnum.value_counts().sort_index())
+    #print(resp.pregnum.value_counts().sort_index())
+
+    CrossValidatePregnum(resp, preg)
