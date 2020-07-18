@@ -46,14 +46,32 @@ def CrossValidatePregnum(resp, preg):
 
     cv_resp = resp[['caseid','pregnum']]
 
-    cv_merge = pd.merge(left=cv_preg, right=cv_resp,
+    #left join pregs to resp to check ids
+    cv_merge = pd.merge(left=cv_resp, right=cv_preg,
      how='left', left_on='caseid', right_on='caseid')
+
+    #if a respondent had no pregnancies, they won't have a caseid in preg
+    cv_merge.count_preg.replace(np.nan, 0, inplace=True)
 
     cv_merge['preg_diff'] = cv_merge.count_preg - cv_merge.pregnum
 
-    print(cv_resp.nunique())
+    print(cv_merge.preg_diff.value_counts()) 
 
-    #print(cv_merge.preg_diff.value_counts())
+
+def CrossValPythonically(resp, preg):
+    """Use the dict returned by MakePregMap to validate
+
+    resp: dataframe with nsfg respondents
+    preg: dataframe with nsfg pregnancies
+    """
+    dict_preg = nsfg.MakePregMap(preg)
+    validatecases = []
+    for key, value in dict_preg.items():
+        preg_val = resp.loc[resp.caseid==key,'pregnum'].values[0] - len(value)
+        if preg_val != 0:
+            validatecases.append(key)
+    
+    print(len(validatecases))
 
 
 if __name__ == '__main__':
@@ -62,6 +80,11 @@ if __name__ == '__main__':
     resp = nsfg.ReadFemResp()
     preg = nsfg.ReadFemPreg()
 
+    #part one
     #print(resp.pregnum.value_counts().sort_index())
 
-    CrossValidatePregnum(resp, preg)
+    #part two first attempt
+    #CrossValidatePregnum(resp, preg)
+
+    #part three with dict
+    CrossValPythonically(resp, preg)
